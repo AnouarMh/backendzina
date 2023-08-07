@@ -17,8 +17,12 @@ class Admin extends Authenticatable
 
     protected $fillable = [
         'nom', 'email', 'password', 'numerotel', 'image', 'country',
-        'localisation', 'horaire',
+        'localisation', 'horaire', 'superadmin_id',
     ];
+    public function superadmin()
+    {
+        return $this->belongsTo(Superadmin::class, 'superadmin_id');
+    }
 
     public function services()
     {

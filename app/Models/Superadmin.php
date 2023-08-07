@@ -9,8 +9,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Superadmin extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
-    protected $guarded = [];
+    use HasFactory, HasApiTokens,Notifiable;
 
     // Les attributs pouvant être masqués lorsque le modèle est converti en tableau ou JSON
     protected $hidden = ['password', 'remember_token'];
@@ -23,7 +22,7 @@ class Superadmin extends Authenticatable
     // Relation avec les admins
     public function admins()
     {
-        return $this->hasMany(Admin::class);
+        return $this->hasMany(Admin::class, 'superadmin_id');
     }
 
     // Relation avec les clients via les centres
