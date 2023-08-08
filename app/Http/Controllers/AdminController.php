@@ -57,14 +57,14 @@ class AdminController extends Controller
         return response()->json(['token' => $token], 200);
     }
 
-    public function manageClients()
+   //get les clients par centre
+    public function getClients()
     {
-        // Logique pour gérer les clients du centre
-
-        $clients = Client::all();
-        return view('admin.manageClients', compact('clients'));
-
+        $id=Auth::guard('admin')->user()->id;
+        $clients = Client::where('admin_id',$id) ->get();
+        return response()->json(['clients' => $clients], 200);
     }
+   
 
     public function manageReservations()
     {
@@ -101,4 +101,35 @@ class AdminController extends Controller
 
         return response()->json(['message' => 'Commande créée avec succès', 'commande' => $commande], 201);
     }
+
+    //cree un client par un admin
+    public function createClient(Request $request)
+    {
+        $request->validate([
+            'nom' => 'required',
+            'email' => 'required|email|unique:clients',
+            'password' => 'required|min:6',
+            'country' => 'required',
+        ]);
+    
+        // Remplacez ce code par la logique pour récupérer l'ID du superadmin
+    
+        $data = $request->only([
+            'nom', 'prenom', 'email', 'password', 'numerotel', 'image', 'country', 'langue',
+        ]);
+    
+        // ... Autres étapes de validation et de traitement
+        //donne la valeur  de superadmin_id si la superadmin ajouter le centre si nn donne 0
+        $data['admin_id'] = Auth::guard('admin')->user()->id;
+
+    
+        $data['password'] = Hash::make($data['password']);
+        $client = Client::create($data);
+    
+        return response()->json(['message' => 'Client créé avec succès', 'client' => $client], 201);
+
+    
+        }
+
+    
 }

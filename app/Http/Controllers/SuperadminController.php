@@ -11,6 +11,7 @@ use App\Models\Client;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class SuperadminController extends Controller
 {
@@ -53,4 +54,79 @@ class SuperadminController extends Controller
         return response()->json($clients, 200);
     }
 
+    //filtrer les clients par centre
+    public function getClientByCenter($centerId)
+    {
+        $clients = Client::where('admin_id', $centerId)->get();
+        return response()->json($clients, 200);
+    }
+    public function getAllClients()
+    {
+        $clients = Client::all();
+        return response()->json($clients, 200);
+    }
+
+    //update superadmin
+    public function updateSuperadmin(Request $request)
+    {
+        $request->validate([
+            'image' => 'sometimes|image|nullable',
+        ]);
+        $data = $request->only([
+            'nom', 'prenom', 'email', 'numerotel', 'image', 'country',
+        ]);
+        if ($request->hasFile('image')) {
+            $extension = $request->image->getClientOriginalExtension();
+            $filename = Str::random(10) . '.' . $extension;
+            $request->image->storeAs('uploads', $filename, 'public');
+            $path = 'http://localhost:8000/storage/uploads/' . $filename;
+            $data['image'] = $path;
+        }
+     
+
+        $superadmin = Auth::guard('superadmin')->user();
+        $superadmin->update($data);
+
+        return response()->json(['message' => 'Superadmin updated successfully', 'superadmin' => $superadmin], 200);
+    }
+
+    //reset email with confirmation password 
+    public function resetEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:superadmins',
+            'password' => 'required|min:6',
+        ]);
+
+        $credentials = $request->only('email', 'password');
+        $superadmin = Auth::guard('superadmin')->user();
+
+        if (!$superadmin || !Hash::check($credentials['password'], $superadmin->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $superadmin->update(['email' => $credentials['email']]);
+
+        return response()->json(['message' => 'Email updated successfully', 'superadmin' => $superadmin], 200);
+    }
+
+    //reset password with confirmation password
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|min:6',
+            'new_password' => 'required|min:6',
+        ]);
+
+        $credentials = $request->only('password', 'new_password');
+        $superadmin = Auth::guard('superadmin')->user();
+
+        if (!$superadmin || !Hash::check($credentials['password'], $superadmin->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $superadmin->update(['password' => Hash::make($credentials['new_password'])]);
+
+        return response()->json(['message' => 'Password updated successfully', 'superadmin' => $superadmin], 200);
+    }
 }
